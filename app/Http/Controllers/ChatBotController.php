@@ -9,30 +9,30 @@ use Twilio\Rest\Client;
 class ChatBotController extends Controller
 {
     // This function is used to listen for incoming messages
-    public function listenToReplies(Request $request) {
-        $from = $request->input('WaId'); // This is the number that sending your bot a message.
-        $body = $request->input('Body'); // This is the message you get from the number sending the message to the bot.
-        if($body === "Hola" || $body === "hola"){
-            $message = "Hola!! 👋\n";
-            $message .= "Este es un Bot creado por Emiliano Perez Mendez, envia tu nombre para continuar\n";
-            $this->sendWhatsAppMessage($message, $from);
-        
-        }elseif($body === "Juan" || $body === "juan" || $body === "Juan ignacio" || $body === "juan ignacio" || $body === "Juan Ignacio"){
-            $message = "Si crees que soy un Junior 🎓, enviá Junior\n";
-            $this->sendWhatsAppMessage($message, $from);
-        
-        }else if($body === "Laura" || $body === "laura"){
-            $message = "Te amo!! ❤❤❤ Gracias por apoyarme siempre sos lo mejor que me paso en la vida!\n";
-            $this->sendWhatsAppMessage($message, $from);
-        
-        }else if($body === "Junior" || $body === "junior"){
-            $message = "Bueno, este es mi Chatbot 📱 y así podemos estar todo el día, espero que lo hayas disfrutado.\n";
-            $message .= "Gracias por utilizar mi Chatbot! ✋ \n";
-            $this->sendWhatsAppMessage($message, $from);
-        
-        }else{
-            $message = "envia una opcion correcta\n";
-            $this->sendWhatsAppMessage($message, $from);
+    public function listenToReplies(Request $request)
+    {
+        $from = $request->input('WaId');
+        $body = $request->input('Body');
+
+        $client = new \GuzzleHttp\Client();
+        try {
+            $response = $client->request('GET', "https://api.github.com/users/$body");
+            $githubResponse = json_decode($response->getBody());
+            if ($response->getStatusCode() == 200) {
+                $message = "*Name:* $githubResponse->name\n";
+                $message .= "*Bio:* $githubResponse->bio\n";
+                $message .= "*Lives in:* $githubResponse->location\n";
+                $message .= "*Number of Repos:* $githubResponse->public_repos\n";
+                $message .= "*Followers:* $githubResponse->followers devs\n";
+                $message .= "*Following:* $githubResponse->following devs\n";
+                $message .= "*URL:* $githubResponse->html_url\n";
+                $this->sendWhatsAppMessage($message, $from);
+            } else {
+                $this->sendWhatsAppMessage($githubResponse->message, $from);
+            }
+        } catch (RequestException $th) {
+            $response = json_decode($th->getResponse()->getBody());
+            $this->sendWhatsAppMessage($response->message, $from);
         }
         return;
     }
